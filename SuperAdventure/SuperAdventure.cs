@@ -22,10 +22,16 @@ namespace SuperAdenture
 
             Location location = new Location(1, "Home", "This is your house!");
 
-            _player = new Player(10, 10, 20, 0, 1);
+            _player = new Player(10, 10, 20, 0);
             MoveTo(World.LocationByID(World.LOCATION_ID_HOME));
             _player.Inventory.Add(new InventoryItem(World.ItemByID(World.ITEM_ID_RUSTY_SWORD), 1));
 
+            UpdatePlayerStats();
+            
+        }
+
+        private void UpdatePlayerStats()
+        {
             lblHitPoints.Text = _player.CurrentHitPoints.ToString();
             lblGold.Text = _player.Gold.ToString();
             lblExperience.Text = _player.ExperiencePoints.ToString();
@@ -210,7 +216,7 @@ namespace SuperAdenture
                             rtbMessages.Text += newLocation.QuestAvailableHere.RewardItem.Name + Environment.NewLine;
                             rtbMessages.Text += Environment.NewLine;
 
-                            _player.ExperiencePoints += newLocation.QuestAvailableHere.RewardExperiencePoints;
+                            _player.AddExperiencePoints(newLocation.QuestAvailableHere.RewardExperiencePoints);
                             _player.Gold += newLocation.QuestAvailableHere.RewardGold;
 
                             _player.AddItemToInventory(newLocation.QuestAvailableHere.RewardItem);
@@ -286,6 +292,8 @@ namespace SuperAdenture
             UpdateWeaponListInUI();
             UpdatePotionsListInUI();
 
+            UpdatePlayerStats();
+
             ScrollToBottomOfMessages();
 
         }
@@ -308,7 +316,7 @@ namespace SuperAdenture
                 rtbMessages.Text += "You defeated the " + _currentMonster.Name + Environment.NewLine;
 
                 // gain experience
-                _player.ExperiencePoints += _currentMonster.RewardExperiencePoints;
+                _player.AddExperiencePoints(_currentMonster.RewardExperiencePoints);
                 rtbMessages.Text += "You receive " + _currentMonster.RewardExperiencePoints.ToString() +
                     " experience points" + Environment.NewLine;
 
@@ -355,10 +363,7 @@ namespace SuperAdenture
                 }
 
                 // refresh UI
-                lblHitPoints.Text = _player.CurrentHitPoints.ToString();
-                lblGold.Text = _player.Gold.ToString();
-                lblExperience.Text = _player.ExperiencePoints.ToString();
-                lblLevel.Text = _player.Level.ToString();
+                UpdatePlayerStats();
 
                 UpdateInventoryListInUI();
                 UpdatePotionsListInUI();
