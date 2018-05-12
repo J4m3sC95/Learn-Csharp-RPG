@@ -32,17 +32,92 @@ namespace SuperAdenture
                 _player = Player.CreateDefaultPlayer();
             }
 
+            // bind properties to UI labels
+            lblHitPoints.DataBindings.Add("Text", _player, "CurrentHitPoints");
+            lblGold.DataBindings.Add("Text", _player, "Gold");
+            lblExperience.DataBindings.Add("Text", _player, "ExperiencePoints");
+            lblLevel.DataBindings.Add("Text", _player, "Level");
+
+            // bind Inventory Data Grid View to player inventory
+            dgvInventory.RowHeadersVisible = false;
+            dgvInventory.AutoGenerateColumns = false;
+
+            dgvInventory.DataSource = _player.Inventory;
+
+            dgvInventory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                HeaderText = "Name",
+                Width = 197,
+                DataPropertyName = "Description"
+            });
+
+            dgvInventory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                HeaderText = "Quantity",
+                DataPropertyName = "Quantity"
+            });
+
+            // Bind Quests data grid view to player quests
+            dgvQuests.RowHeadersVisible = false;
+            dgvQuests.AutoGenerateColumns = false;
+
+            dgvQuests.DataSource = _player.Quests;
+
+            dgvQuests.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                HeaderText = "Name",
+                Width = 197,
+                DataPropertyName = "Name"
+            });
+
+            dgvQuests.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                HeaderText = "Done?",
+                DataPropertyName = "IsCompleted"
+            });
+
+            // Bind Weapons to combo box
+            cboWeapons.DataSource = _player.Weapons;
+            cboWeapons.DisplayMember = "Name";
+            cboWeapons.ValueMember = "Id";
+
+            if(_player.CurrentWeapon != null)
+            {
+                cboWeapons.SelectedItem = _player.CurrentWeapon;
+            }
+
+            cboWeapons.SelectedIndexChanged += cboWeapons_SelectedIndexChanged;
+
+            // bind healing potions to combo box
+            cboPotions.DataSource = _player.Potions;
+            cboPotions.DisplayMember = "Name";
+            cboPotions.ValueMember = "Id";
+
+            _player.PropertyChanged += PlayerOnPropertyChanged;
+
             MoveTo(_player.CurrentLocation);
-            UpdatePlayerStats();
-            
         }
 
-        private void UpdatePlayerStats()
+        private void PlayerOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
-            lblHitPoints.Text = _player.CurrentHitPoints.ToString();
-            lblGold.Text = _player.Gold.ToString();
-            lblExperience.Text = _player.ExperiencePoints.ToString();
-            lblLevel.Text = _player.Level.ToString();
+            if(propertyChangedEventArgs.PropertyName == "Weapons")
+            {
+                cboWeapons.DataSource = _player.Weapons;
+                if (!_player.Weapons.Any())
+                {
+                    cboWeapons.Visible = false;
+                    btnUseWeapon.Visible = false;
+                }
+            }
+            else if(propertyChangedEventArgs.PropertyName == "Potions")
+            {
+                cboPotions.DataSource = _player.Potions;
+                if (!_player.Potions.Any())
+                {
+                    cboPotions.Visible = false;
+                    btnUsePotion.Visible = false;
+                }
+            }
         }
 
         private void btnNorth_Click(object sender, EventArgs e)
@@ -64,119 +139,7 @@ namespace SuperAdenture
         {
             MoveTo(_player.CurrentLocation.LocationToWest);
         }
-
-        private void UpdateInventoryListInUI()
-        {
-            //refresh inventory
-            dgvInventory.RowHeadersVisible = false;
-
-            dgvInventory.ColumnCount = 2;
-            dgvInventory.Columns[0].Name = "Name";
-            dgvInventory.Columns[0].Width = 197;
-            dgvInventory.Columns[1].Name = "Quantity";
-
-            dgvInventory.Rows.Clear();
-
-            foreach (InventoryItem inventoryItem in _player.Inventory)
-            {
-                if (inventoryItem.Quantity > 0)
-                {
-                    dgvInventory.Rows.Add(new[] { inventoryItem.Details.Name, inventoryItem.Quantity.ToString() });
-                }
-            }
-        }
-
-        private void UpdateQuestListInUI()
-        {
-            //refresh quests
-            dgvQuests.RowHeadersVisible = false;
-
-            dgvQuests.ColumnCount = 2;
-            dgvQuests.Columns[0].Name = "Name";
-            dgvQuests.Columns[0].Width = 197;
-            dgvQuests.Columns[1].Name = "Done?";
-
-            dgvQuests.Rows.Clear();
-
-            foreach (PlayerQuest playerQuest in _player.Quests)
-            {
-                dgvQuests.Rows.Add(new[] { playerQuest.Details.Name, playerQuest.IsCompleted.ToString() });
-            }
-        }
-
-        private void UpdateWeaponListInUI()
-        {
-            //refresh weapon combobox
-
-            List<Weapon> weapons = new List<Weapon>();
-
-            foreach (InventoryItem inventoryItem in _player.Inventory)
-            {
-                if (inventoryItem.Details is Weapon)
-                {
-                    if (inventoryItem.Quantity > 0)
-                    {
-                        weapons.Add((Weapon)inventoryItem.Details);
-                    }
-                }
-            }
-
-            if (weapons.Count == 0)
-            {
-                cboWeapons.Visible = false;
-                btnUseWeapon.Visible = false;
-            }
-            else
-            {
-                cboWeapons.SelectedIndexChanged -= cboWeapons_SelectedIndexChanged;
-                cboWeapons.DataSource = weapons;
-                cboWeapons.SelectedIndexChanged += cboWeapons_SelectedIndexChanged;
-                cboWeapons.DisplayMember = "Name";
-                cboWeapons.ValueMember = "ID";
-
-                if (_player.CurrentWeapon != null)
-                {
-                    cboWeapons.SelectedItem = _player.CurrentWeapon;
-                }
-                else
-                {
-                    cboWeapons.SelectedIndex = 0;
-                }
-            }            
-        }
-
-        private void UpdatePotionsListInUI()
-        {
-            // refresh potions combobox
-            List<HealingPotion> healingPotions = new List<HealingPotion>();
-
-            foreach (InventoryItem inventoryItem in _player.Inventory)
-            {
-                if (inventoryItem.Details is HealingPotion)
-                {
-                    if (inventoryItem.Quantity > 0)
-                    {
-                        healingPotions.Add((HealingPotion)inventoryItem.Details);
-                    }
-
-                }
-            }
-
-            if (healingPotions.Count == 0)
-            {
-                cboPotions.Visible = false;
-                btnUsePotion.Visible = false;
-            }
-            else
-            {
-                cboPotions.DataSource = healingPotions;
-                cboPotions.DisplayMember = "Name";
-                cboPotions.ValueMember = "ID";
-
-                cboPotions.SelectedIndex = 0;
-            }
-        }
-
+                
         private void MoveTo(Location newLocation)
         {
             // does player have required item?
@@ -201,9 +164,6 @@ namespace SuperAdenture
 
             // heal player
             _player.CurrentHitPoints = _player.MaximumHitPoints;
-
-            // update hit points in UI
-            lblHitPoints.Text = _player.CurrentHitPoints.ToString();
 
             // is there a quest here?
             if(newLocation.QuestAvailableHere != null)
@@ -289,10 +249,10 @@ namespace SuperAdenture
                     _currentMonster.LootTable.Add(lootItem);
                 }
 
-                cboWeapons.Visible = true;
-                cboPotions.Visible = true;
-                btnUseWeapon.Visible = true;
-                btnUsePotion.Visible = true;
+                cboWeapons.Visible = _player.Weapons.Any();
+                cboPotions.Visible = _player.Potions.Any();
+                btnUseWeapon.Visible = _player.Weapons.Any();
+                btnUsePotion.Visible = _player.Potions.Any();
             }
             else
             {
@@ -302,13 +262,6 @@ namespace SuperAdenture
                 btnUseWeapon.Visible = false;
                 btnUsePotion.Visible = false;
             }
-
-            UpdateInventoryListInUI();
-            UpdateQuestListInUI();
-            UpdateWeaponListInUI();
-            UpdatePotionsListInUI();
-
-            UpdatePlayerStats();
 
             ScrollToBottomOfMessages();
 
@@ -378,13 +331,6 @@ namespace SuperAdenture
                     }
                 }
 
-                // refresh UI
-                UpdatePlayerStats();
-
-                UpdateInventoryListInUI();
-                UpdatePotionsListInUI();
-                UpdateWeaponListInUI();
-
                 rtbMessages.Text += Environment.NewLine;
 
                 // move to current location for healing
@@ -399,7 +345,6 @@ namespace SuperAdenture
                 rtbMessages.Text += "The " + _currentMonster.Name + " did " + damageToPlayer.ToString() +
                     " points of damage." + Environment.NewLine;
                 _player.CurrentHitPoints -= damageToPlayer;
-                lblHitPoints.Text = _player.CurrentHitPoints.ToString();
 
                 if(_player.CurrentHitPoints <= 0)
                 {
@@ -424,14 +369,7 @@ namespace SuperAdenture
             }
 
             // remove from inventory
-            foreach(InventoryItem ii in _player.Inventory)
-            {
-                if(ii.Details.ID == potion.ID)
-                {
-                    ii.Quantity--;
-                    break;
-                }
-            }
+            _player.RemoveItemFromInventory(potion);
             rtbMessages.Text += "You drink a " + potion.Name + Environment.NewLine;
 
             // Monster does damage
@@ -439,10 +377,6 @@ namespace SuperAdenture
             rtbMessages.Text += "The " + _currentMonster.Name + " did " + damageToPlayer.ToString() +
                 " points of damage." + Environment.NewLine;
             _player.CurrentHitPoints -= damageToPlayer;
-            lblHitPoints.Text = _player.CurrentHitPoints.ToString();
-
-            UpdateInventoryListInUI();
-            UpdatePotionsListInUI();
 
             if (_player.CurrentHitPoints <= 0)
             {
