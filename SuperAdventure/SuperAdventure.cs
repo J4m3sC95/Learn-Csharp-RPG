@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using Engine;
 using System.IO;
 
-namespace SuperAdenture
+namespace SuperAdventure
 {
     public partial class SuperAdventure : Form
     {
@@ -146,6 +146,8 @@ namespace SuperAdenture
                     btnUseWeapon.Visible = _player.Weapons.Any();
                     btnUsePotion.Visible = _player.Potions.Any();
                 }
+
+                btnTrade.Visible = (_player.CurrentLocation.VendorWorkingHere != null);
             }
         }
 
@@ -205,6 +207,13 @@ namespace SuperAdenture
         private void cboWeapons_SelectedIndexChanged(object sender, EventArgs e)
         {
             _player.CurrentWeapon = (Weapon)cboWeapons.SelectedItem;
+        }
+
+        private void btnTrade_Click(object sender, EventArgs e)
+        {
+            TradingScreen tradingScreen = new TradingScreen(_player);
+            tradingScreen.StartPosition = FormStartPosition.CenterParent;
+            tradingScreen.ShowDialog(this);
         }
     }
 }
