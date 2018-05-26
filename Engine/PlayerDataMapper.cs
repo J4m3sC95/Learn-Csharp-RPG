@@ -30,45 +30,47 @@ namespace Engine
                         savedGameCommand.CommandText = "SELECT TOP 1 * FROM SavedGame";
 
                         // execute command and check if data is available
-                        SqlDataReader reader = savedGameCommand.ExecuteReader();
-
-                        if (!reader.HasRows)
+                        using (SqlDataReader reader = savedGameCommand.ExecuteReader())
                         {
-                            return null;
-                        }
+                            if (!reader.HasRows)
+                            {
+                                return null;
+                            }
 
-                        // read data from database and create player
-                        reader.Read();
+                            // read data from database and create player
+                            reader.Read();
 
-                        int currentHitPoints = (int)reader["CurrentHitPoints"];
-                        int maximumHitPoints = (int)reader["MaximumHitPoints"];
-                        int gold = (int)reader["Gold"];
-                        int experiencePoints = (int)reader["ExperiencePoints"];
-                        int currentLocationID = (int)reader["CurrentLocationID"];
+                            int currentHitPoints = (int)reader["CurrentHitPoints"];
+                            int maximumHitPoints = (int)reader["MaximumHitPoints"];
+                            int gold = (int)reader["Gold"];
+                            int experiencePoints = (int)reader["ExperiencePoints"];
+                            int currentLocationID = (int)reader["CurrentLocationID"];
 
-                        player = Player.CreatePlayerFromDatabase(currentHitPoints, maximumHitPoints, gold,
-                            experiencePoints, currentLocationID);
+                            player = Player.CreatePlayerFromDatabase(currentHitPoints, maximumHitPoints, gold,
+                                experiencePoints, currentLocationID);
+                        }                            
                     }
 
                     // read quest table
                     using (SqlCommand questCommand = connection.CreateCommand())
                     {
                         questCommand.CommandType = CommandType.Text;
-                        questCommand.CommandText = "SELECT * FROM Quest";
+                        questCommand.CommandText = "SELECT * FROM Quest";                                           
 
-                        SqlDataReader reader = questCommand.ExecuteReader();
-
-                        if (reader.HasRows)
+                        using (SqlDataReader reader = questCommand.ExecuteReader())
                         {
-                            while (reader.Read())
+                            if (reader.HasRows)
                             {
-                                int questID = (int)reader["QuestID"];
-                                bool isCompleted = (bool)reader["IsCompleted"];
+                                while (reader.Read())
+                                {
+                                    int questID = (int)reader["QuestID"];
+                                    bool isCompleted = (bool)reader["IsCompleted"];
 
-                                PlayerQuest playerQuest = new PlayerQuest(World.QuestByID(questID));
-                                playerQuest.IsCompleted = isCompleted;
-                                player.Quests.Add(playerQuest);
-                            }
+                                    PlayerQuest playerQuest = new PlayerQuest(World.QuestByID(questID));
+                                    playerQuest.IsCompleted = isCompleted;
+                                    player.Quests.Add(playerQuest);
+                                }
+                            } 
                         }
                     }
 
@@ -77,18 +79,19 @@ namespace Engine
                     {
                         inventoryCommand.CommandType = CommandType.Text;
                         inventoryCommand.CommandText = "SELECT * FROM Inventory";
-
-                        SqlDataReader reader = inventoryCommand.ExecuteReader();
-
-                        if (reader.HasRows)
+                        
+                        using (SqlDataReader reader = inventoryCommand.ExecuteReader())
                         {
-                            while (reader.Read())
+                            if (reader.HasRows)
                             {
-                                int inventoryItemID = (int)reader["InventoryItemID"];
-                                int quantity = (int)reader["Quantity"];
+                                while (reader.Read())
+                                {
+                                    int inventoryItemID = (int)reader["InventoryItemID"];
+                                    int quantity = (int)reader["Quantity"];
 
-                                player.AddItemToInventory(World.ItemByID(inventoryItemID), quantity);
-                            }
+                                    player.AddItemToInventory(World.ItemByID(inventoryItemID), quantity);
+                                }
+                            } 
                         }
                     }
 
