@@ -77,7 +77,7 @@ namespace Engine
 
         private void RaiseMessage(string message, bool addExtraNewLine = false)
         {
-            if(OnMessage != null)
+            if (OnMessage != null)
             {
                 OnMessage(this, new MessageEventArgs(message, addExtraNewLine));
             }
@@ -118,9 +118,9 @@ namespace Engine
 
         public bool CompletedThisQuest(Quest quest)
         {
-            foreach(PlayerQuest pq in Quests)
+            foreach (PlayerQuest pq in Quests)
             {
-                if(pq.Details.ID == quest.ID)
+                if (pq.Details.ID == quest.ID)
                 {
                     return pq.IsCompleted;
                 }
@@ -149,7 +149,7 @@ namespace Engine
             {
                 InventoryItem item = Inventory.SingleOrDefault(ii => ii.Details.ID == qci.Details.ID);
 
-                if(item != null)
+                if (item != null)
                 {
                     RemoveItemFromInventory(item.Details, qci.Quantity);
                 }
@@ -169,17 +169,17 @@ namespace Engine
 
         }
 
-        public void AddItemToInventory(Item itemToAdd)
+        public void AddItemToInventory(Item itemToAdd, int quantity = 1)
         {
             InventoryItem item = Inventory.SingleOrDefault(ii => ii.Details.ID == itemToAdd.ID);
 
-            if(item == null)
+            if (item == null)
             {
                 Inventory.Add(new InventoryItem(itemToAdd, 1));
             }
             else
             {
-                item.Quantity++;
+                item.Quantity+= quantity;
             }
 
             RaiseInventoryChangedEvent(itemToAdd);
@@ -190,16 +190,16 @@ namespace Engine
             InventoryItem item = Inventory.SingleOrDefault(ii => ii.Details.ID == itemToRemove.ID);
 
             // if item exists in inventory
-            if(item != null)
+            if (item != null)
             {
                 item.Quantity -= quantity;
 
-                if(item.Quantity < 0)
+                if (item.Quantity < 0)
                 {
                     item.Quantity = 0;
                 }
 
-                if(item.Quantity == 0)
+                if (item.Quantity == 0)
                 {
                     Inventory.Remove(item);
                 }
@@ -213,7 +213,7 @@ namespace Engine
             // mark quest as completed
             PlayerQuest playerQuest = Quests.SingleOrDefault(pq => pq.Details.ID == quest.ID);
 
-            if(playerQuest != null)
+            if (playerQuest != null)
             {
                 playerQuest.IsCompleted = true;
             }
@@ -252,7 +252,7 @@ namespace Engine
             currentLocation.AppendChild(playerData.CreateTextNode(this.CurrentLocation.ID.ToString()));
             stats.AppendChild(currentLocation);
 
-            if(CurrentWeapon != null)
+            if (CurrentWeapon != null)
             {
                 XmlNode currentWeapon = playerData.CreateElement("CurrentWeapon");
                 currentWeapon.AppendChild(playerData.CreateTextNode(this.CurrentWeapon.ID.ToString()));
@@ -263,7 +263,7 @@ namespace Engine
             XmlNode inventoryItems = playerData.CreateElement("InventoryItems");
             player.AppendChild(inventoryItems);
 
-            foreach(InventoryItem item in this.Inventory)
+            foreach (InventoryItem item in this.Inventory)
             {
                 XmlNode inventoryItem = playerData.CreateElement("InventoryItem");
 
@@ -282,7 +282,7 @@ namespace Engine
             XmlNode playerQuests = playerData.CreateElement("PlayerQuests");
             player.AppendChild(playerQuests);
 
-            foreach(PlayerQuest quest in this.Quests)
+            foreach (PlayerQuest quest in this.Quests)
             {
                 XmlNode playerQuest = playerData.CreateElement("PlayerQuest");
 
@@ -328,24 +328,24 @@ namespace Engine
                 int currentLocationID = Convert.ToInt32(playerData.SelectSingleNode("/Player/Stats/CurrentLocation").InnerText);
                 player.CurrentLocation = World.LocationByID(currentLocationID);
 
-                if(playerData.SelectSingleNode("/Player/Stats/CurrentWeapon") != null)
+                if (playerData.SelectSingleNode("/Player/Stats/CurrentWeapon") != null)
                 {
                     int currentWeaponID = Convert.ToInt32(playerData.SelectSingleNode("/Player/Stats/CurrentWeapon").InnerText);
                     player.CurrentWeapon = (Weapon)World.ItemByID(currentWeaponID);
                 }
 
-                foreach(XmlNode node in playerData.SelectNodes("/Player/InventoryItems/InventoryItem"))
+                foreach (XmlNode node in playerData.SelectNodes("/Player/InventoryItems/InventoryItem"))
                 {
                     int id = Convert.ToInt32(node.Attributes["ID"].Value);
                     int quantity = Convert.ToInt32(node.Attributes["Quantity"].Value);
 
-                    for(int i = 0; i < quantity; i++)
+                    for (int i = 0; i < quantity; i++)
                     {
                         player.AddItemToInventory(World.ItemByID(id));
                     }
                 }
 
-                foreach(XmlNode node in playerData.SelectNodes("/Player/PlayerQuests/PlayerQuest"))
+                foreach (XmlNode node in playerData.SelectNodes("/Player/PlayerQuests/PlayerQuest"))
                 {
                     int id = Convert.ToInt32(node.Attributes["ID"].Value);
                     bool isCompleted = Convert.ToBoolean(node.Attributes["IsCompleted"].Value);
@@ -364,6 +364,16 @@ namespace Engine
                 // If error with xml
                 return Player.CreateDefaultPlayer();
             }
+        }
+
+        public static Player CreatePlayerFromDatabase(int currentHitPoints, int maximumHitPoints, int gold,
+            int experiencePoints, int currentLocationID)
+        {
+            Player player = new Player(currentHitPoints, maximumHitPoints, gold, experiencePoints);
+
+            player.MoveTo(World.LocationByID(currentLocationID));
+
+            return player;
         }
 
         public void MoveTo(Location newLocation)
